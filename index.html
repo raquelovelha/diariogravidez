@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diário da Minha Gravidez - Desperta Débora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'dd-primary': '#E67E22', // Orange from flowers
+              'dd-secondary': '#2E86C1', // Blue from dress
+              'dd-accent': '#F1948A', // Pink from flowers/ribbon
+              'dd-bg': '#FDF2E9', // Creamy beige background
+              'dd-dark': '#2D2D2D',
+              'dd-orange': '#F28C28',
+              'dd-orange-light': '#FCD7B5',
+              'dd-pink': '#E8A6A6',
+              'dd-light-pink': '#F7E0E5',
+              'dd-blue': '#89C2D9',
+              'dd-light-blue': '#D9EBF2',
+              'dd-light-yellow': '#FFEBCC',
+              'dd-light-green': '#D9F2D9',
+              'dd-warm-red': '#E85D5D',
+            },
+            fontFamily: {
+              'script': ['"Dancing Script"', 'cursive'],
+              'body': ['"Lato"', 'sans-serif'],
+              'display': ['"Playfair Display"', 'serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Lato', sans-serif;
+        background-color: #FDF2E9;
+        color: #2D2D2D;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+      /* Floral background simulation */
+      .bg-floral {
+        background-color: #FDF2E9;
+        background-image: 
+          radial-gradient(circle at 10% 10%, #F1948A 5px, transparent 10px),
+          radial-gradient(circle at 90% 20%, #F7DC6F 8px, transparent 15px),
+          radial-gradient(circle at 30% 80%, #85C1E9 6px, transparent 12px),
+          radial-gradient(circle at 80% 90%, #E67E22 10px, transparent 20px);
+        background-size: 100% 100%;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
