@@ -32,19 +32,19 @@ const App: React.FC = () => {
   };
 
   return (
-    /* Adicionamos flex e justify-center para que o app fique centralizado no computador */
+    /* Centraliza tudo horizontalmente com items-center */
     <div className="min-h-screen bg-dd-bg text-gray-800 font-body flex flex-col items-center">
       
       {currentView !== AppView.WELCOME && (
         <Header currentView={currentView} onChangeView={setCurrentView} />
       )}
       
-      {/* Ajustes abaixo:
-        - max-w-md: Limita a largura ao tamanho de um celular (aprox. 450px)
-        - w-full: Garante que ele use a largura disponível até o limite acima
-        - px-4: Adiciona um respiro nas laterais para não encostar na borda
+      {/* MUDANÇA AQUI:
+          - max-w-none: No celular não impõe limite fixo além do container
+          - md:max-w-6xl: No computador, permite que o conteúdo se espalhe até 1152px
+          - w-full: Garante que use todo o espaço disponível
       */}
-      <main className={`w-full max-w-md mx-auto flex-1 ${currentView !== AppView.WELCOME ? 'py-6 px-4' : ''}`}>
+      <main className={`w-full ${currentView === AppView.WELCOME ? 'max-w-none' : 'max-w-md md:max-w-4xl mx-auto py-6 px-4'}`}>
         {renderContent()}
       </main>
       
