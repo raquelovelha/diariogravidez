@@ -11,10 +11,10 @@
         theme: {
           extend: {
             colors: {
-              'dd-primary': '#E67E22', // Orange from flowers
-              'dd-secondary': '#2E86C1', // Blue from dress
-              'dd-accent': '#F1948A', // Pink from flowers/ribbon
-              'dd-bg': '#FDF2E9', // Creamy beige background
+              'dd-primary': '#E67E22',
+              'dd-secondary': '#2E86C1',
+              'dd-accent': '#F1948A',
+              'dd-bg': '#FDF2E9',
               'dd-dark': '#2D2D2D',
               'dd-orange': '#F28C28',
               'dd-orange-light': '#FCD7B5',
@@ -48,7 +48,6 @@
           -ms-overflow-style: none;
           scrollbar-width: none;
       }
-      /* Floral background simulation */
       .bg-floral {
         background-color: #FDF2E9;
         background-image: 
@@ -59,21 +58,9 @@
         background-size: 100% 100%;
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+  </head>
   <body>
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>
