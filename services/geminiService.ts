@@ -3,7 +3,7 @@ import { SYSTEM_INSTRUCTION } from "../constants";
 import { Message } from "../types";
 
 // Initialize the client securely using the environment variable
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 export const sendMessageToGemini = async (
   history: Message[],
