@@ -4,20 +4,16 @@ import { WeekInfo, AppView } from '../types';
 import { JOURNEY_DATA } from '../constants';
 import { BookOpen, X, Heart, MessageCircle } from 'lucide-react';
 
-// --- Função de Formatação Reativada ---
+// --- Função de Formatação Robusta ---
 const formatMarkdown = (text: string): string => {
   if (!text) return '';
-  // Remove espaços extras e limpa o texto
-  let formatted = text.trim();
+  // Remove espaços extras e quebras de linha desnecessárias que quebram o layout
+  let formatted = text.trim().replace(/\s+/g, ' ');
 
   return formatted
-    // Formata o bloco de citação do Salmo/Versículo
     .replace(/^>\s?(.*)$/gm, '<blockquote class="border-l-4 border-dd-primary/40 pl-4 italic text-gray-600 my-6 py-2 bg-gray-50">$1</blockquote>')
-    // Formata Negrito (**texto**)
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-dd-dark">$1</strong>')
-    // Formata Itálico (*texto*)
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-dd-dark text-xl block mt-8 mb-2">$1</strong>')
     .replace(/\*(.*?)\*/g, '<span class="text-dd-primary font-semibold">$1</span>')
-    // Divide em parágrafos
     .split('\n\n')
     .map(para => para.trim() ? `<p class="mb-5 leading-relaxed text-gray-700 text-lg md:text-xl">${para}</p>` : '')
     .join('');
@@ -63,34 +59,36 @@ export const JourneyScreen: React.FC<{ onChangeView?: (view: AppView) => void }>
         ))}
       </div>
 
-      {/* Modal de conteúdo */}
+      {/* Modal de conteúdo CORRIGIDO PARA PC */}
       {selectedWeek && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 bg-dd-dark/60 backdrop-blur-sm">
-          {/* LARGURA AUMENTADA para PC: md:max-w-5xl */}
-          <div className="bg-white rounded-[2.5rem] w-full md:max-w-5xl shadow-2xl relative animate-scale-in flex flex-col max-h-[90vh] border border-white/20">
+          {/* LARGURA AUMENTADA: md:max-w-4xl (aprox 900px) */}
+          <div className="bg-white rounded-[2.5rem] w-full md:max-w-4xl shadow-2xl relative animate-scale-in flex flex-col max-h-[90vh] border border-white/20">
             
-            {/* Header Laranja */}
+            {/* Botão de fechar flutuante mais visível */}
+            <button 
+              onClick={() => setSelectedWeek(null)} 
+              className="absolute top-6 right-6 z-10 p-2 bg-black/10 hover:bg-black/20 rounded-full text-white transition-all"
+            >
+              <X size={24}/>
+            </button>
+
+            {/* Header Laranja com altura generosa no PC */}
             <div className="h-40 md:h-56 bg-gradient-to-br from-dd-primary to-dd-accent flex items-center justify-center px-10 text-center shrink-0">
-              <h3 className="font-script text-5xl md:text-7xl text-white drop-shadow-lg leading-tight">
+              <h3 className="font-script text-5xl md:text-7xl text-white drop-shadow-lg">
                 {selectedWeek.title}
               </h3>
-              <button 
-                onClick={() => setSelectedWeek(null)} 
-                className="absolute top-6 right-6 p-2 bg-white/20 rounded-full text-white hover:bg-white/40 transition-all"
-              >
-                <X size={24}/>
-              </button>
             </div>
 
-            {/* Conteúdo com margens amplas */}
+            {/* Conteúdo com margens amplas e texto grande */}
             <div className="p-8 md:p-16 -mt-10 bg-white rounded-t-[3rem] relative shadow-2xl flex flex-col flex-1 overflow-hidden">
               <div className="overflow-y-auto pr-6 custom-scrollbar flex-1">
                 <style>{`
                   .drop-cap::first-letter {
                     float: left;
-                    font-size: 5rem;
+                    font-size: 5.5rem;
                     line-height: 0.7;
-                    padding-top: 10px;
+                    padding-top: 12px;
                     padding-right: 18px;
                     color: #E67E22;
                     font-family: 'Great Vibes', cursive;
@@ -99,16 +97,15 @@ export const JourneyScreen: React.FC<{ onChangeView?: (view: AppView) => void }>
                   .custom-scrollbar::-webkit-scrollbar-thumb { background: #E67E22; border-radius: 10px; }
                 `}</style>
 
-                {/* Aqui reativamos o dangerouslySetInnerHTML e formatMarkdown */}
                 <div
-                  className="drop-cap text-gray-700 antialiased text-justify md:text-left text-lg md:text-xl"
+                  className="drop-cap text-gray-700 antialiased text-justify md:text-left"
                   dangerouslySetInnerHTML={{
                     __html: formatMarkdown(selectedWeek.fullContent)
                   }}
                 />
               </div>
 
-              {/* Footer Inferior */}
+              {/* Ações Inferiores */}
               <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center gap-4 shrink-0">
                 <button 
                   onClick={() => setSelectedWeek(null)} 
