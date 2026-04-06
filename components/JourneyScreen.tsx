@@ -1,144 +1,128 @@
+// components/JourneyScreen.tsx
 import React, { useState } from 'react';
+import { WeekInfo, AppView } from '../types';
 import { JOURNEY_DATA } from '../constants';
-import { WeekInfo } from '../types';
-import { BookOpen, X, Heart, Sparkles, ChevronRight, Download } from 'lucide-react'; // Importar Download
+import { BookOpen, X, Heart, MessageCircle } from 'lucide-react';
 
-// Helper function to format markdown to HTML (duplicated from ChatInterface for self-containment)
+// --- Função de Formatação Reativada ---
 const formatMarkdown = (text: string): string => {
-  // Bold: **text** -> <strong>text</strong>
-  let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  // Italic: *text* -> <em>$1</em>
-  formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  // Detect URLs and wrap them in <a> tags
-  formattedText = formattedText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-dd-secondary hover:underline">$1</a>');
-  return formattedText;
+  if (!text) return '';
+  // Remove espaços extras e limpa o texto
+  let formatted = text.trim();
+
+  return formatted
+    // Formata o bloco de citação do Salmo/Versículo
+    .replace(/^>\s?(.*)$/gm, '<blockquote class="border-l-4 border-dd-primary/40 pl-4 italic text-gray-600 my-6 py-2 bg-gray-50">$1</blockquote>')
+    // Formata Negrito (**texto**)
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-dd-dark">$1</strong>')
+    // Formata Itálico (*texto*)
+    .replace(/\*(.*?)\*/g, '<span class="text-dd-primary font-semibold">$1</span>')
+    // Divide em parágrafos
+    .split('\n\n')
+    .map(para => para.trim() ? `<p class="mb-5 leading-relaxed text-gray-700 text-lg md:text-xl">${para}</p>` : '')
+    .join('');
 };
 
-const cardBackgrounds = [
-  'bg-dd-accent/20',
-  'bg-dd-light-yellow',
-  'bg-dd-light-green',
-  'bg-dd-secondary/10',
-];
+const cardBackgrounds = ['bg-dd-accent/20', 'bg-dd-light-yellow', 'bg-dd-light-green', 'bg-dd-secondary/10'];
 
-export const JourneyScreen: React.FC = () => {
+export const JourneyScreen: React.FC<{ onChangeView?: (view: AppView) => void }> = ({ onChangeView }) => {
   const [selectedWeek, setSelectedWeek] = useState<WeekInfo | null>(null);
 
-  const downloadLink = "https://drive.google.com/file/d/1AhWhQLynPfZpofmY-GIHClL3KoNvoTks/view";
-
   return (
-    <div className="max-w-5xl mx-auto px-4 pb-20 animate-fade-in">
-      <div className="text-center mb-12 space-y-3">
-        <span className="text-dd-primary font-bold tracking-wider text-xs uppercase">Acompanhamento Semanal</span>
-        <h2 className="font-script text-5xl text-dd-dark">Diário da Gravidez</h2>
-        <p className="text-gray-500 font-light max-w-md mx-auto">
-          Clique na semana correspondente para ver o motivo de oração e o desenvolvimento do bebê.
-        </p>
+    <div className="max-w-6xl mx-auto px-4 pb-20 animate-fade-in font-body">
+      {/* Cabeçalho */}
+      <div className="text-center mb-12 pt-6">
+        <span className="text-dd-primary font-bold tracking-wider text-xs uppercase tracking-[0.2em]">Acompanhamento Semanal</span>
+        <h2 className="font-script text-6xl text-dd-dark mt-2">Diário da Gravidez</h2>
       </div>
 
-      {/* Seção de Download do E-book */}
-      <div className="mb-10 text-center">
-        <p className="text-gray-600 text-base mb-4 max-w-lg mx-auto">
-          Para uma jornada ainda mais completa, baixe a versão integral do Diário da Minha Gravidez em formato E-book.
-        </p>
-        <a 
-          href={downloadLink} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-3 bg-dd-primary text-white px-8 py-3 rounded-full font-bold text-lg shadow-lg shadow-dd-primary/30 hover:bg-dd-primary/90 hover:-translate-y-1 transition-all duration-300"
-        >
-          <Download size={20} />
-          Baixar o Diário Completo (E-book)
-        </a>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {JOURNEY_DATA.map((item, index) => {
-          const bgColor = cardBackgrounds[index % cardBackgrounds.length];
-          return (
-            <button
-              key={item.week}
-              onClick={() => setSelectedWeek(item)}
-              className={`group relative ${bgColor} rounded-2xl p-6 shadow-sm hover:shadow-lg border border-transparent hover:border-dd-primary/40 transition-all duration-300 text-left flex flex-col h-48 overflow-hidden`}
-            >
-              {/* Background Decorativo - Círculo Orgânico */}
-              <div className="absolute top-0 right-0 w-28 h-28 bg-white/30 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-125 group-hover:bg-white/50"></div>
-              <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-white/30 rounded-full -ml-8 transition-transform group-hover:scale-125 group-hover:bg-white/50"></div>
-              
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <div className="flex justify-between items-start">
-                  <span className="inline-block bg-white/70 text-dd-primary text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border border-white/50">
-                    Semana {item.week}
-                  </span>
-                  <Heart size={16} className="text-white/60 group-hover:text-dd-accent transition-colors fill-current" />
-                </div>
-                
-                <div className="mt-4">
-                  <h3 className="font-script text-2xl text-dd-dark mb-1 leading-none group-hover:text-dd-primary transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-gray-600 font-body flex items-center gap-1">
-                    <BookOpen size={10} className="text-dd-primary" />
-                    {item.scripture}
-                  </p>
-                </div>
-
-                <div className="mt-auto pt-4 flex items-center text-dd-primary text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-                  Ler Devoção <ChevronRight size={14} />
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Modal Overlay */}
-      {selectedWeek && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-dd-dark/60 backdrop-blur-sm animate-fade-in overflow-y-auto"> {/* Adicionado overflow-y-auto aqui */}
-          <div 
-            className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl animate-scale-in relative border border-white/50 my-8" // Adicionado margin vertical
-            onClick={(e) => e.stopPropagation()}
+      {/* Grid de semanas */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
+        {JOURNEY_DATA.map((item, index) => (
+          <button
+            key={item.week}
+            onClick={() => setSelectedWeek(item)}
+            className={`${cardBackgrounds[index % 4]} group relative rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all h-52 overflow-hidden flex flex-col justify-between text-left border border-white/50 hover:scale-[1.02]`}
           >
-            {/* Header do Modal com Imagem/Cor */}
-            <div className="h-40 bg-gradient-to-br from-dd-primary to-dd-accent relative flex items-center justify-center bg-pattern-dots">
-              <div className="absolute inset-0 bg-dd-primary/10 opacity-20"></div> {/* Subtle overlay */}
-              <h3 className="font-script text-5xl text-white drop-shadow-md z-10 text-center px-4 leading-tight">
+            <div className="flex justify-between items-start">
+              <span className="bg-white/90 text-dd-primary text-xs font-bold uppercase px-3 py-1 rounded-lg shadow-sm">
+                Semana {item.week}
+              </span>
+              <Heart size={18} className="text-dd-primary/30 group-hover:text-dd-primary transition-colors" />
+            </div>
+            <div>
+              <h3 className="font-script text-3xl text-dd-dark leading-tight group-hover:text-dd-primary transition-colors">
+                {item.title}
+              </h3>
+              <div className="flex items-center gap-2 mt-3 text-xs text-gray-500 font-medium italic">
+                <BookOpen size={14} className="text-dd-primary" />
+                {item.scripture}
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Modal de conteúdo */}
+      {selectedWeek && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 bg-dd-dark/60 backdrop-blur-sm">
+          {/* LARGURA AUMENTADA para PC: md:max-w-5xl */}
+          <div className="bg-white rounded-[2.5rem] w-full md:max-w-5xl shadow-2xl relative animate-scale-in flex flex-col max-h-[90vh] border border-white/20">
+            
+            {/* Header Laranja */}
+            <div className="h-40 md:h-56 bg-gradient-to-br from-dd-primary to-dd-accent flex items-center justify-center px-10 text-center shrink-0">
+              <h3 className="font-script text-5xl md:text-7xl text-white drop-shadow-lg leading-tight">
                 {selectedWeek.title}
               </h3>
               <button 
-                onClick={() => setSelectedWeek(null)}
-                className="absolute top-4 right-4 p-2 bg-white/30 hover:bg-white/50 rounded-full text-white transition-colors backdrop-blur-sm"
+                onClick={() => setSelectedWeek(null)} 
+                className="absolute top-6 right-6 p-2 bg-white/20 rounded-full text-white hover:bg-white/40 transition-all"
               >
-                <X size={20} />
+                <X size={24}/>
               </button>
             </div>
 
-            <div className="p-8 -mt-6 bg-white rounded-t-3xl relative z-20 shadow-lg">
-              <div className="text-center mb-6">
-                <h3 className="font-script text-4xl text-dd-dark leading-tight">Devocional da Semana {selectedWeek.week}</h3>
-                <p className="text-gray-500 text-sm mt-2 font-body">Um momento de conexão e oração pelo seu bebê.</p>
-              </div>
+            {/* Conteúdo com margens amplas */}
+            <div className="p-8 md:p-16 -mt-10 bg-white rounded-t-[3rem] relative shadow-2xl flex flex-col flex-1 overflow-hidden">
+              <div className="overflow-y-auto pr-6 custom-scrollbar flex-1">
+                <style>{`
+                  .drop-cap::first-letter {
+                    float: left;
+                    font-size: 5rem;
+                    line-height: 0.7;
+                    padding-top: 10px;
+                    padding-right: 18px;
+                    color: #E67E22;
+                    font-family: 'Great Vibes', cursive;
+                  }
+                  .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+                  .custom-scrollbar::-webkit-scrollbar-thumb { background: #E67E22; border-radius: 10px; }
+                `}</style>
 
-              <div className="prose prose-orange mx-auto max-w-none"> {/* Removido max-w-none para usar o estilo padrão */}
-                <div 
-                  className="bg-dd-bg p-6 rounded-2xl border border-dd-primary/20 shadow-sm mb-6 bg-pattern-lines text-gray-700 leading-relaxed font-body text-base"
-                  dangerouslySetInnerHTML={{ __html: formatMarkdown(selectedWeek.fullContent) }}
+                {/* Aqui reativamos o dangerouslySetInnerHTML e formatMarkdown */}
+                <div
+                  className="drop-cap text-gray-700 antialiased text-justify md:text-left text-lg md:text-xl"
+                  dangerouslySetInnerHTML={{
+                    __html: formatMarkdown(selectedWeek.fullContent)
+                  }}
                 />
-
-                <div className="flex justify-center mb-6">
-                  <span className="bg-white shadow-sm border border-dd-primary/20 text-dd-primary text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-2">
-                    <BookOpen size={12} />
-                    Meditação Bíblica: {selectedWeek.scripture}
-                  </span>
-                </div>
               </div>
 
-              <button 
-                onClick={() => setSelectedWeek(null)}
-                className="w-full mt-8 bg-dd-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-dd-primary/90 transition-colors shadow-lg shadow-dd-primary/30 transform hover:-translate-y-0.5 active:translate-y-0"
-              >
-                Amém, eu recebo!
-              </button>
+              {/* Footer Inferior */}
+              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center gap-4 shrink-0">
+                <button 
+                  onClick={() => setSelectedWeek(null)} 
+                  className="w-full md:w-2/3 bg-dd-primary text-white py-5 rounded-2xl font-bold text-xl shadow-lg hover:bg-dd-primary/90 transition-all hover:scale-[1.01]"
+                >
+                  Amém, eu recebo!
+                </button>
+                <button
+                  onClick={() => { setSelectedWeek(null); onChangeView?.(AppView.CHAT); }}
+                  className="text-dd-primary font-bold text-base flex items-center justify-center gap-2 hover:underline"
+                >
+                  <MessageCircle size={22} /> Ficou com dúvida? Pergunte para a Mãe Débora
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -3,11 +3,27 @@ import { Send, Loader2, Sparkles, Heart } from 'lucide-react';
 import { Message, ConversationStage } from '../types';
 import { sendMessageToGemini } from '../services/geminiService';
 import { diarioData } from '../diarioData';
+import { buscarContextoNoPDF } from '../services/supabaseService';
 
 const formatMarkdown = (text: string): string => {
-  let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  formattedText = formattedText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-dd-secondary hover:underline">$1</a>');
+  let formattedText = text
+    // Títulos (###)
+    .replace(/### (.*?)(?:\n|$)/g, '<h3 class="text-dd-primary font-bold mt-4 mb-2 text-base border-b border-dd-primary/10 pb-1">$1</h3>')
+    
+    // Links do Markdown [texto](url) - Agora clicáveis e abrem em nova aba
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-dd-secondary hover:underline font-bold underline-offset-2">$1</a>')
+    
+    // Links diretos (URLs soltas)
+    .replace(/(?<!href=")(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-dd-secondary hover:underline font-bold">$1</a>')
+    
+    // Destaque para a Oração da Mãe Débora
+    .replace(/Oração da Mãe Débora/g, '<span class="text-dd-primary font-bold">🙏 Oração da Mãe Débora</span>')
+    
+    // Negrito e Listas
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-dd-dark">$1</strong>')
+    .replace(/^\* (.*$)/gim, '<li class="ml-4 list-disc mb-1 text-sm">$1</li>')
+    .replace(/\n/g, '<br />');
+
   return formattedText;
 };
 
@@ -34,7 +50,7 @@ export const ChatInterface: React.FC = () => {
         {
           id: 'welcome1',
           role: 'model',
-          text: "A paz, querida! Sou a assistente do Diário da Minha Gravidez. Estou aqui para caminhar com você nessa jornada milagrosa de fé e amor.",
+          text: "A paz, querida! Sou a assistente do Diário da Minha Gravidez. Estou aqui para caminhar com você nessa jornada de fé.",
           timestamp: new Date()
         },
         {
@@ -70,39 +86,53 @@ export const ChatInterface: React.FC = () => {
       if (conversationStage === ConversationStage.AWAITING_GESTANTE_STATUS) {
         const lowerText = text.toLowerCase();
         if (lowerText.includes('não') || lowerText.includes('nao')) {
-          modelResponseText = "Entendi, querida. Saiba que estamos aqui para te apoiar. Você gostaria de conversar sobre estar tentando engravidar ou sobre nosso Plano de Oração?";
-          nextConversationStage = ConversationStage.AWAITING_NON_GESTANTE_TOPIC;
+          modelResponseText = "Entendi, querida. Como posso te apoiar hoje?";
+          nextConversationStage = ConversationStage.GENERAL_CHAT;
         } else {
-          modelResponseText = "Que alegria! Essa é uma bênção maravilhosa! Em qual semana de gestação você está?";
+          modelResponseText = "Que alegria! Em qual semana de gestação você está?";
           nextConversationStage = ConversationStage.AWAITING_WEEK;
         }
       } 
       else if (conversationStage === ConversationStage.AWAITING_WEEK) {
-        const weekNumberMatch = text.match(/\d+/);
-        const weekNumber = weekNumberMatch ? parseInt(weekNumberMatch[0], 10) : NaN;
+        const weekMatch = text.match(/\d+/);
+        const weekNum = weekMatch ? parseInt(weekMatch[0], 10) : NaN;
 
-        if (!isNaN(weekNumber) && weekNumber >= 1 && weekNumber <= 40) {
-          setGestationWeek(weekNumber);
-          const info = diarioData[weekNumber];
-          if (info) {
-            modelResponseText = `Que maravilha! Na **${weekNumber}ª semana**, nossa meditação é em **${info.versiculo}**.\n\n**Reflexão:** ${info.reflexao}\n\n**Oração sugerida:** ${info.oracao}\n\nComo você está se sentindo hoje?`;
+        if (!isNaN(weekNum)) {
+          setGestationWeek(weekNum);
+          
+          // BUSCA NO PDF (Supabase)
+          const contextoPDF = await buscarContextoNoPDF(`Semana ${weekNum}`);
+          const infoLocal = diarioData[weekNum];
+
+          // PRIORIDADE: Se houver conteúdo no PDF, usa o PDF
+          if (contextoPDF && contextoPDF.length > 50) {
+            const promptPDF = `
+              A usuária está na semana ${weekNum}. 
+              Responda como Mãe Débora usando EXCLUSIVAMENTE o conteúdo do diário abaixo.
+              Não use respostas curtas. Inclua a oração e formate com ###.
+              
+              CONTEÚDO DO PDF:
+              ${contextoPDF}
+            `;
+            modelResponseText = await sendMessageToGemini([...messages, userMsg], text, promptPDF);
           } else {
-            modelResponseText = `Que bênção estar na **${weekNumber}ª semana**! Como posso orar por você hoje?`;
+            // Plano B: Informação local curta
+            modelResponseText = `Na **${weekNum}ª semana**, nossa meditação é em **${infoLocal?.versiculo || ''}**. ${infoLocal?.reflexao || ''}`;
           }
           nextConversationStage = ConversationStage.GENERAL_CHAT;
         } else {
-          modelResponseText = "Querida, por favor, me diga a semana em número (ex: '12') para eu buscar seu devocional.";
-          nextConversationStage = ConversationStage.AWAITING_WEEK;
+          modelResponseText = "Por favor, me diga apenas o número da semana (ex: 12).";
         }
       } 
       else {
-        const infoSemanas = gestationWeek ? diarioData[gestationWeek] : null;
-        const contextoExtra = infoSemanas 
-          ? `A usuária está na semana ${gestationWeek}. Versículo: ${infoSemanas.versiculo}. Oração: ${infoSemanas.oracao}.` 
-          : "Usuária não informou a semana ou não está gestante.";
-
-        modelResponseText = await sendMessageToGemini([...messages, userMsg], text, contextoExtra);
-        nextConversationStage = ConversationStage.GENERAL_CHAT;
+        // Busca geral por temas (Alimentação, Atividade Física, etc)
+        const buscaContexto = await buscarContextoNoPDF(text);
+        const promptGeral = `
+          Contexto do Diário: ${buscaContexto}
+          Usuária na semana: ${gestationWeek || 'desconhecida'}.
+          Responda com carinho sobre "${text}". Se houver links no contexto, mostre-os.
+        `;
+        modelResponseText = await sendMessageToGemini([...messages, userMsg], text, promptGeral);
       }
 
       setMessages(prev => [...prev, {
@@ -118,7 +148,7 @@ export const ChatInterface: React.FC = () => {
       setMessages(prev => [...prev, {
         id: 'error',
         role: 'model',
-        text: "Desculpe, querida, tive uma falha na conexão. Pode tentar novamente?",
+        text: "Tive um probleminha técnico. Pode repetir?",
         timestamp: new Date()
       }]);
     } finally {
@@ -127,32 +157,34 @@ export const ChatInterface: React.FC = () => {
   };
 
   const getSuggestions = useMemo(() => {
-    if (conversationStage === ConversationStage.AWAITING_GESTANTE_STATUS) return ["Sim, estou!", "Não estou gestante."];
-    if (conversationStage === ConversationStage.AWAITING_WEEK) return ["Estou na 12ª semana.", "20 semanas.", "38 semanas."];
-    return ["Pedido de oração", "Dúvida sobre o parto", "Versículo do dia"];
+    if (conversationStage === ConversationStage.AWAITING_GESTANTE_STATUS) return ["Sim, estou!", "Não estou."];
+    if (conversationStage === ConversationStage.AWAITING_WEEK) return ["12ª semana", "20 semanas", "38 semanas"];
+    return ["Atividade física", "Dicas de alimentação", "Vida espiritual", "Estou ansiosa"];
   }, [conversationStage]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] max-w-4xl mx-auto bg-white shadow-xl rounded-t-xl overflow-hidden border-x border-gray-100">
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-dd-bg">
+    <div className="flex flex-col h-[calc(100vh-120px)] max-w-4xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
+      <div className="bg-dd-primary p-4 text-white flex items-center gap-3">
+        <Heart size={20} fill="white" />
+        <h1 className="font-bold text-sm">Diário da Minha Gravidez</h1>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30">
         {messages.map((msg) => (
-          <div key={msg.id} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-sm ${msg.role === 'user' ? 'bg-dd-secondary/10 text-dd-dark' : 'bg-white border border-gray-100'}`}>
-              {msg.role === 'model' && (
-                <div className="flex items-center gap-2 mb-2 text-dd-primary font-bold text-xs uppercase">
-                  <Heart size={14} fill="currentColor" /> Mãe Débora
-                </div>
-              )}
-              <div className="whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.text) }} />
+          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
+              msg.role === 'user' ? 'bg-dd-primary text-white' : 'bg-white text-slate-700 border border-gray-100'
+            }`}>
+              <div dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.text) }} />
             </div>
           </div>
         ))}
-        {isLoading && <div className="text-xs italic text-gray-400">Escrevendo com carinho...</div>}
+        {isLoading && <div className="text-xs italic text-dd-primary animate-pulse">Mãe Débora está lendo o diário...</div>}
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 bg-white border-t">
-        <div className="flex gap-2 mb-3 overflow-x-auto">
+      <div className="p-4 border-t bg-white">
+        <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
           {getSuggestions.map((s, i) => (
             <button key={i} onClick={() => handleSendMessage(s)} className="px-3 py-1 bg-dd-primary/10 text-dd-primary rounded-full text-xs whitespace-nowrap">
               {s}
@@ -160,15 +192,15 @@ export const ChatInterface: React.FC = () => {
           ))}
         </div>
         <div className="flex gap-2">
-          <textarea
+          <input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 p-2 border rounded-xl resize-none"
-            placeholder="Escreva aqui..."
-            rows={1}
+            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputValue)}
+            placeholder="Escreva sua dúvida ou oração..."
+            className="flex-1 bg-slate-100 border-none rounded-xl px-4 text-sm focus:ring-2 focus:ring-dd-primary"
           />
-          <button onClick={() => handleSendMessage(inputValue)} className="p-3 bg-dd-primary text-white rounded-xl">
-            <Send size={18} />
+          <button onClick={() => handleSendMessage(inputValue)} className="p-2 bg-dd-primary text-white rounded-xl">
+            <Send size={20} />
           </button>
         </div>
       </div>

@@ -1,66 +1,47 @@
-// src/diarioData.ts
+// constants/diarioData.ts
 
-export interface SemanaConteudo {
-  versiculo: string;
-  reflexao: string;
-  oracao: string;
+export interface WeekInfo {
+  week: number;
+  title: string;
+  scripture: string;
+  fullContent: string;
 }
 
-export const diarioData: Record<number, SemanaConteudo> = {
-  1: {
-    versiculo: "Salmos 139:13",
-    reflexao: "O seu bebé é ainda uma semente de vida a ser formada pelo Senhor no seu ventre. É o início de uma jornada milagrosa guiada pelas mãos do Criador.",
-    oracao: "Senhor, Tu conheces este pequeno ser antes de todos. Ajuda-me a confiar no Teu cuidado desde este primeiro momento."
+export const JOURNEY_DATA: WeekInfo[] = [
+  {
+    week: 1,
+    title: "A Concepção",
+    scripture: "Salmos 139:14-16",
+    fullContent: "A incrível jornada da gravidez começa quando um óvulo é liberado e fertilizado por um espermatozoide. O óvulo fertilizado, agora chamado de zigoto, percorre a tuba uterina e se aninha no seu útero. **O zigoto, que é minúsculo, vai crescer e se transformar no seu bebê.**\n\n*Pai amado, a notícia de que estou gerando uma vida me impacta e me faz feliz. Ajuda-me a depender de Ti em cada dia desta gestação. Que eu me sinta segura de que Tu estás tecendo o meu bebê no meu ventre e que ele será uma pessoa à Tua imagem e semelhança.* [cite: 37, 41, 42]"
   },
-  4: {
-    versiculo: "Salmos 139:15",
-    reflexao: "O embrião está a implantar-se no útero. É um momento delicado e sagrado de fixação e início de nutrição.",
-    oracao: "Pai, que este bebé se sinta acolhido no meu ventre. Sustenta a sua vida e a sua saúde, para a Tua glória."
+  {
+    week: 2,
+    title: "Óvulo Fecundado",
+    scripture: "Salmos 71:6",
+    fullContent: "Desde o primeiro momento, seu corpo reconhece que há uma nova vida e começa a trabalhar para suprir todas as necessidades. As células se dividem incessantemente até a formação de um sistema corpóreo suficiente para a vida fora do útero. [cite: 44, 45]\n\n**Amado Pai, já há vida dentro de mim!** Que o Senhor aninhe este óvulo de maneira que fique totalmente protegido por Ti. Peço que me mantenhas saudável física e emocionalmente. Sei que minha história é única e que vou vivê-la debaixo de Teu cuidado. [cite: 47, 48]"
   },
-  8: {
-    versiculo: "Gênesis 1:27",
-    reflexao: "O coração já bate e os órgãos principais começam a desenhar-se. O milagre da vida torna-se mais visível.",
-    oracao: "Deus, obrigado por este coração que já bate. Que cada batida seja um louvor à Tua criação."
+  {
+    week: 9,
+    title: "Crescimento Acelerado",
+    scripture: "Salmos 71:6",
+    fullContent: "Seu bebê pesa menos de 10 gramas, mas todas as partes do corpo já estão presentes: braços, pernas, olhos e órgãos. A orelha está pronta por fora e se formando por dentro. **O aspecto já é muito parecido com o bebê que você terá nos braços.** [cite: 68, 69]\n\n*Paizinho, que os membros do meu bebê cresçam em saúde. Que ele cresça andando firme em Teus caminhos. Que suas mãos estejam sempre estendidas ao próximo e que ele nunca atue com egoísmo, sempre compartilhando o que Tu lhe deres.* [cite: 73, 74]"
   },
-  12: {
-    versiculo: "Salmos 139:14",
-    reflexao: "O primeiro trimestre termina. O bebé já se move, embora ainda não o sinta. Ele é perfeito na sua pequenez.",
-    oracao: "Eu Te louvo, Senhor, porque o meu filho está a ser feito de modo admirável. Obrigado por nos guardares até aqui."
+  {
+    week: 13,
+    title: "Sentidos em Formação",
+    scripture: "Salmos 150:6",
+    fullContent: "O bebê já está formado e os sentidos começam a ganhar lugar. Movimentos de sucção são treinados e o bebê já pode ouvir os ruídos do corpo da mãe e a sua voz. **As pálpebras, íris e retina estão aparecendo.** [cite: 92, 94, 95]\n\n*Paizinho, que a percepção do mundo do meu bebê seja clara. Que seus ouvidos estejam afinados com a Tua voz e que ele seja alcançado pela Tua graça desde agora.* [cite: 96]"
   },
-  16: {
-    versiculo: "Efésios 2:10",
-    reflexao: "O bebé já consegue fazer expressões faciais e os seus ossos estão a ficar mais fortes. Ele é a Tua obra-prima.",
-    oracao: "Pai, prepara o caminho deste bebé para que ele caminhe nas boas obras que o Senhor planeou para ele."
+  {
+    week: 26,
+    title: "Preparação e Peso",
+    scripture: "Atos 17:25",
+    fullContent: "O bebê tem cerca de 36 centímetros e os olhos começam a abrir. A partir de agora, o peso triplicará pois ele acumula gordura rapidamente para se ajustar à temperatura fora do útero. **O bebê já brinca e treina a sucção com o cordão umbilical.** [cite: 171, 173, 179]\n\n*Pai querido, meu bebê agora armazena o que o manterá aquecido. Que sua vida seja equilibrada e que ele saiba priorizar tempo para relaxar e para a diversão. Que ele seja sensível para escolher amigos fiéis.* [cite: 183, 184]"
   },
-  20: {
-    versiculo: "Lucas 1:44",
-    reflexao: "Metade do caminho! O bebé já ouve a sua voz e os sons do seu corpo. É tempo de falar e cantar para ele.",
-    oracao: "Senhor, que o meu bebé sinta a alegria da Tua presença através da minha voz e do meu louvor."
-  },
-  24: {
-    versiculo: "Jeremias 1:5",
-    reflexao: "O bebé começa a acumular gordura e a pele torna-se menos transparente. Ele está a ficar 'gordinho' e forte.",
-    oracao: "Antes de o formares, Tu já o conhecias. Consagro a vida e o propósito deste bebé a Ti, hoje e sempre."
-  },
-  28: {
-    versiculo: "Filipenses 1:6",
-    reflexao: "Início do terceiro trimestre. O desenvolvimento cerebral é intenso. O Senhor está a completar a boa obra.",
-    oracao: "Estou certa de que Aquele que começou esta obra no meu ventre a completará com perfeição. Confio em Ti."
-  },
-  32: {
-    versiculo: "Salmos 127:3",
-    reflexao: "O bebé pratica a respiração e os sentidos estão apurados. Ele é uma herança do Senhor para a nossa família.",
-    oracao: "Obrigado, Pai, por este presente. Prepara o nosso lar e os nossos corações para recebermos esta herança."
-  },
-  36: {
-    versiculo: "Isaías 41:10",
-    reflexao: "O bebé está a posicionar-se para o nascimento. A ansiedade pode surgir, mas a Tua mão direita sustenta-nos.",
-    oracao: "Não terei medo, pois Tu estás comigo. Dá-me paz e força para estas últimas semanas de espera."
-  },
-  40: {
-    versiculo: "Isaías 66:9",
-    reflexao: "Chegou o momento! O ciclo da gestação completa-se para dar lugar ao nascimento. É hora de confiar totalmente.",
-    oracao: "Senhor, Tu que fizeste chegar a hora do parto, faz nascer com saúde e paz. Entrego este momento nas Tuas mãos."
+  {
+    week: 40,
+    title: "A Chegada",
+    scripture: "Isaías 66:9",
+    fullContent: "Seu bebê está acomodado e quentinho, pronto para nascer. O Senhor, que faz chegar a hora do parto, é quem faz nascer e dá segurança junto ao seio da mãe. [cite: 260, 261, 263]\n\n**Pai amado, obrigada por me transformar em mãe.** Vou depender de Ti em todo tempo. Sozinha não conseguirei cuidar desta vida, mas confio na Tua capacitação e no Teu amor infinito por nós. [cite: 264]"
   }
-};
-
+];
