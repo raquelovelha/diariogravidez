@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppView } from '../types';
+import { AppView } from '../src/types';
 import { ArrowRight, BookOpen, UserPlus } from 'lucide-react';
 
 interface WelcomeScreenProps {

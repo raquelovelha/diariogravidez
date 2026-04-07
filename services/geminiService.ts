@@ -1,44 +1,54 @@
-import { GoogleGenAI, Content, Part } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SYSTEM_INSTRUCTION } from "../constants";
-import { Message } from "../types";
+import { Message } from "../src/types";
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
 export const sendMessageToGemini = async (
   history: Message[],
   userMessage: string,
-  contextoSemana?: string // NOVO: Recebe o texto do diárioData
+  contextoSemana?: string
 ): Promise<string> => {
   try {
-    const recentHistory = history.slice(-10);
-    
-    const contents: Content[] = recentHistory.map((msg) => ({
-      role: msg.role,
-      parts: [{ text: msg.text } as Part],
-    }));
-
-    contents.push({
-      role: 'user',
-      parts: [{ text: userMessage } as Part],
+    // Usando o nome do modelo sem o prefixo 'models/' para maior compatibilidade
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash", 
+      systemInstruction: contextoSemana 
+        ? `${SYSTEM_INSTRUCTION}\n\nCONTEÚDO DO PDF PARA ESTA SEMANA:\n${contextoSemana}`
+        : SYSTEM_INSTRUCTION,
     });
 
-    // Criamos uma instrução personalizada que junta a base com o conteúdo da semana
-    const instrucaoFinal = contextoSemana 
-      ? `${SYSTEM_INSTRUCTION}\n\nCONTEÚDO OFICIAL DESTA SEMANA (Use isso para guiar sua resposta):\n${contextoSemana}`
-      : SYSTEM_INSTRUCTION;
+    // Filtra o histórico: remove mensagens iniciais do 'model' 
+    // O Gemini exige que a primeira mensagem seja sempre 'user'
+    const chatHistory = history
+      .map(msg => ({
+        role: msg.role === 'model' ? 'model' : 'user',
+        parts: [{ text: msg.text }],
+      }))
+      .filter((msg, index, array) => {
+        const firstUserIndex = array.findIndex(m => m.role === 'user');
+        return index >= firstUserIndex && firstUserIndex !== -1;
+      });
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: contents,
-      config: {
-        systemInstruction: instrucaoFinal, // Agora ela sabe o conteúdo do PDF!
+    const chat = model.startChat({
+      history: chatHistory,
+      generationConfig: {
         temperature: 0.7,
-      },
+        maxOutputTokens: 800,
+      }
     });
 
-    return response.text || "Desculpe, querida, tive um pequeno momento de silêncio. Podemos tentar orar novamente?";
-  } catch (error) {
-    console.error("Erro ao falar com a assistente:", error);
-    return "Minha querida, houve uma falha na conexão. Verifique sua internet e tente novamente.";
+    const result = await chat.sendMessage(userMessage);
+    const response = await result.response;
+    return response.text();
+
+  } catch (error: any) {
+    console.error("Erro detalhado Gemini:", error);
+    
+    if (error.message?.includes('429')) {
+      throw new Error("429");
+    }
+    
+    return "Minha querida, tive um probleminha técnico na conexão com a Mãe Débora. Pode tentar falar comigo de novo?";
   }
 };

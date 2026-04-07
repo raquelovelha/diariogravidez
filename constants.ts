@@ -1,5 +1,5 @@
 
-import { WeekInfo } from './types';
+import { WeekInfo } from './src/types';
 
 export const SYSTEM_INSTRUCTION = `
 Você é a Assistente Digital do "Diário da Minha Gravidez: Uma Nova História em Gestação", do movimento Desperta Débora.

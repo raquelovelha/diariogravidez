@@ -1,41 +1,51 @@
 import { createClient } from '@supabase/supabase-js';
+import { HfInference } from '@huggingface/inference';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const hfKey = import.meta.env.VITE_HUGGINGFACE_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const hf = new HfInference(hfKey);
 
 /**
- * Busca trechos do PDF baseados em similaridade vetorial.
- * Ajustado para capturar devocionais longos e manter a precisão.
+ * Busca trechos do PDF usando Hugging Face para embeddings
+ * e Supabase para busca vetorial (RPC).
  */
 export async function buscarContextoNoPDF(pergunta: string): Promise<string> {
   try {
-    // Chamada à função RPC no Supabase
+    if (!pergunta) return "";
+
+    // 1. Gerar o embedding (vetor) da pergunta via Hugging Face
+    // Usamos o modelo 'all-MiniLM-L6-v2' que é leve e preciso
+    const embedding = await hf.featureExtraction({
+      model: 'sentence-transformers/all-MiniLM-L6-v2',
+      inputs: pergunta,
+    }) as number[];
+
+    // 2. Chamar a função no banco de dados (RPC)
+    // Importante: a função deve estar no schema 'public'
     const { data: documents, error } = await supabase.rpc('buscar_trechos_pdf', {
-      input_text: pergunta,
-      // Aumentamos para 0.3 para evitar que traga textos de outras semanas
+      query_embedding: embedding,
       match_threshold: 0.3, 
-      // Aumentamos para 8 trechos para garantir que a reflexão completa seja capturada
       match_count: 8,       
     });
 
     if (error) {
-      console.error("Erro RPC Supabase:", error);
+      console.error("Erro RPC Supabase:", error.message);
       return "";
     }
 
     if (documents && documents.length > 0) {
-      // Unimos os trechos com quebra de linha dupla para um layout limpo no Diário
-      // Removemos o "---" para não poluir o visual do modal
       return documents
-        .map((doc: any) => doc.conteudo.trim())
+        .map((doc: any) => doc.conteudo?.trim() || "")
+        .filter((text: string) => text.length > 0)
         .join('\n\n');
     }
 
     return "";
-  } catch (error) {
-    console.error("Erro na busca do Supabase:", error);
+  } catch (err) {
+    console.error("Erro crítico na busca (HF + Supabase):", err);
     return "";
   }
 }

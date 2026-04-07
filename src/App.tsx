@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ChatInterface } from './components/ChatInterface';
 import { WelcomeScreen } from './components/WelcomeScreen';
-import { JourneyScreen } from './components/JourneyScreen'; // Importação nomeada
+import { JourneyScreen } from './components/JourneyScreen';
 import { InfoScreen } from './components/InfoScreen'; 
 import { AppView } from './types';
 
-import appleIcon from './assets/apple-touch-icon.png';
-import favicon from './assets/favicon.ico';
+// Ajuste para buscar assets que estão fora da pasta src
+import appleIcon from '../assets/apple-touch-icon.png';
+import favicon from '../assets/favicon.ico';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.WELCOME);
