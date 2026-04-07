@@ -1,7 +1,8 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+// Inicializa a API
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
 export const sendMessageToGemini = async (
   history: any[], 
@@ -9,41 +10,43 @@ export const sendMessageToGemini = async (
   contextoSemana?: string
 ): Promise<string> => {
   try {
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
     const instrucaoCompleta = contextoSemana 
-      ? `${SYSTEM_INSTRUCTION}\n\nCONTEXTO DO DIÁRIO:\n${contextoSemana}`
+      ? `${SYSTEM_INSTRUCTION}\n\n[CONTEXTO DA SEMANA ATUAL]: ${contextoSemana}`
       : SYSTEM_INSTRUCTION;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: [
-        { role: "user", parts: [{ text: `[INSTRUÇÃO]: ${instrucaoCompleta}` }] },
-        ...history.slice(-6).map(m => ({
-          role: m.role === 'model' ? 'model' : 'user',
-          parts: [{ text: m.text }]
-        })),
-        { role: "user", parts: [{ text: userMessage }] }
-      ],
-      config: {
+    const cleanHistory = history
+      .map(m => ({
+        role: m.role === 'model' ? 'model' : 'user',
+        parts: [{ text: m.text }],
+      }))
+      .filter((m, i) => !(i === 0 && m.role === 'model'));
+
+    // Montamos o comando final combinando as REGRAS + a PERGUNTA atual
+    const comandoFinal = `[REGRAS E MANUAL]: ${instrucaoCompleta}\n\n[PERGUNTA DA MAMÃE]: ${userMessage}\n\nPor favor, forneça a resposta completa, incluindo a oração da semana mencionada no manual.`;
+
+    const contents = [
+      ...cleanHistory.slice(-4), // Histórico anterior (máximo 4 mensagens)
+      { 
+        role: "user", 
+        parts: [{ text: comandoFinal }] // Enviamos as regras e a pergunta juntas como a última mensagem
+      }
+    ];
+
+    const result = await model.generateContent({
+      contents,
+      generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 500,
+        maxOutputTokens: 2000, 
       }
     });
 
-    return response.text() || "Desculpe, não consegui processar sua mensagem.";
+    const response = await result.response;
+    return response.text();
 
   } catch (error: any) {
-    console.error("Erro Gemini:", error);
-    
-    // Tratamento para Servidor Lotado (503)
-    if (error.message?.includes('503') || error.status === 503) {
-      return "Minha querida, recebi muitas visitas agora e precisei de um fôlego. Pode tentar falar comigo de novo em 1 ou 2 minutinhos? 🙏";
-    }
-
-    // Tratamento para Muitas Requisições (429)
-    if (error.message?.includes('429')) {
-      return "Estou conversando com muitas mamães agora! Vamos esperar um minutinho? Já te respondo com todo carinho. 🌸";
-    }
-    
-    return "Minha querida, tive um probleminha técnico na conexão. Pode repetir a pergunta? 🙏";
+    console.error("Erro Gemini 3 Preview:", error);
+    return "Minha querida, tive um probleminha na conexão. Pode repetir a pergunta? 🙏";
   }
 };

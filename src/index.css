@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  /* Fontes */
+  --font-script: "Dancing Script", cursive;
+  --font-body: "Lato", sans-serif;
+  --font-display: "Playfair Display", serif;
+
+  /* Cores Customizadas */
+  --color-dd-primary: #E67E22;
+  --color-dd-secondary: #2E86C1;
+  --color-dd-accent: #F1948A;
+  --color-dd-bg: #FDF2E9;
+  --color-dd-dark: #2D2D2D;
+  --color-dd-orange: #F28C28;
+  --color-dd-orange-light: #FCD7B5;
+  --color-dd-pink: #E8A6A6;
+  --color-dd-light-pink: #F7E0E5;
+  --color-dd-blue: #89C2D9;
+  --color-dd-light-blue: #D9EBF2;
+  --color-dd-light-yellow: #FFEBCC;
+  --color-dd-light-green: #D9F2D9;
+  --color-dd-warm-red: #E85D5D;
+}
+
+/* Utilitários extras que você já tinha */
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.bg-floral {
+  background-color: #FDF2E9;
+  background-image: 
+    radial-gradient(circle at 10% 10%, #F1948A 5px, transparent 10px),
+    radial-gradient(circle at 90% 20%, #F7DC6F 8px, transparent 15px),
+    radial-gradient(circle at 30% 80%, #85C1E9 6px, transparent 12px),
+    radial-gradient(circle at 80% 90%, #E67E22 10px, transparent 20px);
+  background-size: 100% 100%;
+}

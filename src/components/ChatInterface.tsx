@@ -110,7 +110,7 @@ export const ChatInterface: React.FC = () => {
     }
   };
 
-  // Sugestões de botões inteligentes
+  // Sugestões de botões inteligentes (LIMPO)
   const suggestions = useMemo(() => {
     if (conversationStage === ConversationStage.AWAITING_GESTANTE_STATUS) {
       return [{ label: "Sim, estou!", icon: null }, { label: "Não estou.", icon: null }];
@@ -118,9 +118,14 @@ export const ChatInterface: React.FC = () => {
     if (conversationStage === ConversationStage.AWAITING_WEEK) {
       return [{ label: "12 semanas", icon: null }, { label: "20 semanas", icon: null }];
     }
+    
+    // Deixe APENAS o botão de Saúde aqui:
     return [
-      { label: "Minha semana", icon: <Info size={14} />, prompt: "Fale sobre o que o diário diz sobre minha semana." },
-      { label: "Saúde", icon: <HeartPulse size={14} />, prompt: "Quais as dicas de saúde para este momento?" },
+      { 
+        label: "Saúde", 
+        icon: <HeartPulse size={14} />, 
+        prompt: "Quais as dicas de saúde para este momento?" 
+      }
     ];
   }, [conversationStage]);
 
