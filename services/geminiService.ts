@@ -1,54 +1,49 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
-import { Message } from "../src/types";
 
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 export const sendMessageToGemini = async (
-  history: Message[],
-  userMessage: string,
+  history: any[], 
+  userMessage: string, 
   contextoSemana?: string
 ): Promise<string> => {
   try {
-    // Usando o nome do modelo sem o prefixo 'models/' para maior compatibilidade
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash", 
-      systemInstruction: contextoSemana 
-        ? `${SYSTEM_INSTRUCTION}\n\nCONTEÚDO DO PDF PARA ESTA SEMANA:\n${contextoSemana}`
-        : SYSTEM_INSTRUCTION,
-    });
+    const instrucaoCompleta = contextoSemana 
+      ? `${SYSTEM_INSTRUCTION}\n\nCONTEXTO DO DIÁRIO:\n${contextoSemana}`
+      : SYSTEM_INSTRUCTION;
 
-    // Filtra o histórico: remove mensagens iniciais do 'model' 
-    // O Gemini exige que a primeira mensagem seja sempre 'user'
-    const chatHistory = history
-      .map(msg => ({
-        role: msg.role === 'model' ? 'model' : 'user',
-        parts: [{ text: msg.text }],
-      }))
-      .filter((msg, index, array) => {
-        const firstUserIndex = array.findIndex(m => m.role === 'user');
-        return index >= firstUserIndex && firstUserIndex !== -1;
-      });
-
-    const chat = model.startChat({
-      history: chatHistory,
-      generationConfig: {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [
+        { role: "user", parts: [{ text: `[INSTRUÇÃO]: ${instrucaoCompleta}` }] },
+        ...history.slice(-6).map(m => ({
+          role: m.role === 'model' ? 'model' : 'user',
+          parts: [{ text: m.text }]
+        })),
+        { role: "user", parts: [{ text: userMessage }] }
+      ],
+      config: {
         temperature: 0.7,
-        maxOutputTokens: 800,
+        maxOutputTokens: 500,
       }
     });
 
-    const result = await chat.sendMessage(userMessage);
-    const response = await result.response;
-    return response.text();
+    return response.text() || "Desculpe, não consegui processar sua mensagem.";
 
   } catch (error: any) {
-    console.error("Erro detalhado Gemini:", error);
+    console.error("Erro Gemini:", error);
     
+    // Tratamento para Servidor Lotado (503)
+    if (error.message?.includes('503') || error.status === 503) {
+      return "Minha querida, recebi muitas visitas agora e precisei de um fôlego. Pode tentar falar comigo de novo em 1 ou 2 minutinhos? 🙏";
+    }
+
+    // Tratamento para Muitas Requisições (429)
     if (error.message?.includes('429')) {
-      throw new Error("429");
+      return "Estou conversando com muitas mamães agora! Vamos esperar um minutinho? Já te respondo com todo carinho. 🌸";
     }
     
-    return "Minha querida, tive um probleminha técnico na conexão com a Mãe Débora. Pode tentar falar comigo de novo?";
+    return "Minha querida, tive um probleminha técnico na conexão. Pode repetir a pergunta? 🙏";
   }
 };

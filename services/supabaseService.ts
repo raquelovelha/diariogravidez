@@ -1,51 +1,44 @@
-import { createClient } from '@supabase/supabase-js';
-import { HfInference } from '@huggingface/inference';
+// services/supabaseService.ts
+import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const hfKey = import.meta.env.VITE_HUGGINGFACE_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-const hf = new HfInference(hfKey);
 
-/**
- * Busca trechos do PDF usando Hugging Face para embeddings
- * e Supabase para busca vetorial (RPC).
- */
 export async function buscarContextoNoPDF(pergunta: string): Promise<string> {
   try {
-    if (!pergunta) return "";
+    if (!pergunta || !hfKey) return "";
 
-    // 1. Gerar o embedding (vetor) da pergunta via Hugging Face
-    // Usamos o modelo 'all-MiniLM-L6-v2' que é leve e preciso
-    const embedding = await hf.featureExtraction({
-      model: 'sentence-transformers/all-MiniLM-L6-v2',
-      inputs: pergunta,
-    }) as number[];
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2",
+      {
+        headers: { 
+          Authorization: `Bearer ${hfKey}`,
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({ inputs: pergunta }),
+      }
+    );
 
-    // 2. Chamar a função no banco de dados (RPC)
-    // Importante: a função deve estar no schema 'public'
-    const { data: documents, error } = await supabase.rpc('buscar_trechos_pdf', {
+    if (!response.ok) return "";
+
+    const embedding = await response.json();
+    if (!Array.isArray(embedding)) return "";
+
+    const { data: documents, error } = await supabase.rpc("buscar_trechos_pdf", {
       query_embedding: embedding,
-      match_threshold: 0.3, 
-      match_count: 8,       
+      match_threshold: 0.25,
+      match_count: 5,
     });
 
-    if (error) {
-      console.error("Erro RPC Supabase:", error.message);
-      return "";
-    }
+    if (error) return "";
 
-    if (documents && documents.length > 0) {
-      return documents
-        .map((doc: any) => doc.conteudo?.trim() || "")
-        .filter((text: string) => text.length > 0)
-        .join('\n\n');
-    }
-
-    return "";
+    return documents?.map((doc: any) => doc.conteudo).join("\n\n") || "";
   } catch (err) {
-    console.error("Erro crítico na busca (HF + Supabase):", err);
+    console.warn("Busca PDF indisponível:", err);
     return "";
   }
 }
