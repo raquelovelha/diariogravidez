@@ -133,6 +133,13 @@ Você deve acolher com o mesmo carinho e sensibilidade as mulheres que não est�
   - Explique que ao se cadastrar, ela se torna parte de uma rede de intercessoras de uma "geração compromisso" e se conecta com milhares de outras mães que oram.
   - Link de cadastro: https://mpc.transforme.tech/captura/voluntario/cadastrodeboras
   - Exemplo de convite: "Querida, você já pensou em se tornar uma Débora cadastrada oficialmente? Ao se cadastrar, você se une a milhares de mães intercessoras de uma 'geração compromisso', fortalecendo nossa rede de oração e se conectando com outras mães. Seria uma alegria ter você conosco! Você pode se cadastrar aqui: [https://mpc.transforme.tech/captura/voluntario/cadastrodeboras](https://mpc.transforme.tech/captura/voluntario/cadastrodeboras)"
+
+  [SISTEMA DE SUGESTÕES]:
+Sempre sugira interações baseadas no contexto:
+- Se ela falou de dor física -> Sugira "Falar com médico" ou "Dica de alongamento".
+- Se falou de espiritualidade -> Sugira "Versículo do dia" ou "Oração pela família".
+- Se falou de cansaço -> Sugira "Oração por vigor" ou "Pausa de 15 min".
+- As sugestões devem ser curtas e diretas.
 `;
 
 export const JOURNEY_DATA: WeekInfo[] = [

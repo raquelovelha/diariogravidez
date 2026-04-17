@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Send, Heart, Info, HeartPulse } from 'lucide-react';
+import { Send, Heart, HeartPulse } from 'lucide-react';
 import { Message, ConversationStage } from '../types'; 
 import { sendMessageToGemini } from '../../services/geminiService';
 import { buscarContextoNoPDF } from '../../services/supabaseService';
@@ -10,6 +10,7 @@ const formatMarkdown = (text: string): string => {
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-dd-secondary hover:underline font-bold underline-offset-2">$1</a>')
     .replace(/Oração da Mãe Débora/g, '<span class="text-dd-primary font-bold">🙏 Oração da Mãe Débora</span>')
     .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-dd-dark">$1</strong>')
+    .replace(/> \*(.*?)\*/g, '<blockquote class="border-l-4 border-dd-primary/30 pl-4 my-2 italic text-slate-600 bg-slate-50 py-1 font-serif">$1</blockquote>')
     .replace(/\n/g, '<br />');
 };
 
@@ -19,14 +20,13 @@ export const ChatInterface: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationStage, setConversationStage] = useState<ConversationStage>(ConversationStage.INITIAL_WELCOME);
   const [gestationWeek, setGestationWeek] = useState<number | null>(null);
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<string[]>([]); // NOVO ESTADO
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Scroll automático para a última mensagem
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Mensagem de boas-vindas inicial
   useEffect(() => {
     if (conversationStage === ConversationStage.INITIAL_WELCOME) {
       setMessages([
@@ -46,80 +46,89 @@ export const ChatInterface: React.FC = () => {
     setMessages(prev => [...prev, userMsg]);
     setInputValue('');
     setIsLoading(true);
+    setDynamicSuggestions([]); // Limpa botões ao enviar
 
     try {
-      let modelResponse = '';
+      let responseData: { texto: string; sugestoes: string[] };
       let nextStage = conversationStage;
       let contexto = "";
 
-      // 1. Lógica de Estágios da Conversa
+      // 1. Lógica de Estágios
       if (conversationStage === ConversationStage.AWAITING_GESTANTE_STATUS) {
         if (text.toLowerCase().includes('não')) {
-          modelResponse = "Entendi, querida. Como posso te apoiar hoje?";
+          responseData = { 
+            texto: "Entendi, querida. Como posso te apoiar hoje? Posso orar por você ou falar sobre o desejo de ser mãe?", 
+            sugestoes: ["Quero engravidar", "Perda gestacional", "Sou intercessora"] 
+          };
           nextStage = ConversationStage.GENERAL_CHAT;
         } else {
-          modelResponse = "Que alegria! Em qual semana você está? (Digite apenas o número)";
+          responseData = { 
+            texto: "Que alegria! Em qual semana você está? (Digite apenas o número)", 
+            sugestoes: ["8", "12", "20", "32"] 
+          };
           nextStage = ConversationStage.AWAITING_WEEK;
         }
       } 
       else if (conversationStage === ConversationStage.AWAITING_WEEK) {
-        // Tenta extrair o número da semana da mensagem da usuária
         const weekMatch = text.match(/\d+/);
         const week = weekMatch ? parseInt(weekMatch[0]) : NaN;
 
         if (!isNaN(week)) {
           setGestationWeek(week);
-          // BUSCA NO PDF: Usando a solução Hugging Face que acabamos de validar
           contexto = await buscarContextoNoPDF(`Semana ${week}`).catch(() => "");
-          
-          // Chama o Gemini já enviando o conteúdo do PDF da semana específica
-          modelResponse = await sendMessageToGemini([...messages, userMsg], text, contexto);
+          responseData = await sendMessageToGemini([...messages, userMsg], text, contexto);
           nextStage = ConversationStage.GENERAL_CHAT;
         } else {
-          modelResponse = "Não consegui entender o número. Pode me dizer apenas a semana? Ex: 12";
+          responseData = { 
+            texto: "Não consegui entender o número. Pode me dizer apenas a semana? Ex: 12", 
+            sugestoes: ["12", "24", "40"] 
+          };
         }
       } 
       else {
-        // CHAT GERAL: Busca contexto baseado na pergunta + semana atual (se houver)
         const buscaTermo = gestationWeek ? `Semana ${gestationWeek}: ${text}` : text;
         contexto = await buscarContextoNoPDF(buscaTermo).catch(() => "");
-        
-        modelResponse = await sendMessageToGemini([...messages, userMsg], text, contexto);
+        responseData = await sendMessageToGemini([...messages, userMsg], text, contexto);
       }
 
-      // Adiciona a resposta da Mãe Débora à lista
       setMessages(prev => [...prev, { 
         id: crypto.randomUUID(), 
         role: 'model', 
-        text: modelResponse || "Tive um pequeno lapso, querida. Pode repetir?", 
+        text: responseData.texto || "Tive um pequeno lapso, querida. Pode repetir?", 
         timestamp: new Date() 
       }]);
+      
+      setDynamicSuggestions(responseData.sugestoes); // Define os novos botões
       setConversationStage(nextStage);
 
     } catch (e: any) {
       console.error("Erro no Chat:", e);
-      let errorMsg = "Tive um probleminha técnico na conexão. Pode tentar falar comigo de novo?";
-      
-      if (e.message === '429') {
-        errorMsg = "Minha querida, recebi muitas mensagens agora! Vamos pausar 1 minuto? Já já te respondo. 🙏";
-      }
-
-      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'model', text: errorMsg, timestamp: new Date() }]);
+      setMessages(prev => [...prev, { 
+        id: crypto.randomUUID(), 
+        role: 'model', 
+        text: "Tive um probleminha técnico. Vamos tentar de novo? 🙏", 
+        timestamp: new Date() 
+      }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Sugestões de botões inteligentes (LIMPO)
   const suggestions = useMemo(() => {
-    if (conversationStage === ConversationStage.AWAITING_GESTANTE_STATUS) {
-      return [{ label: "Sim, estou!", icon: null }, { label: "Não estou.", icon: null }];
+    // Se a IA gerou sugestões, use-as
+    if (dynamicSuggestions.length > 0) {
+      return dynamicSuggestions.map(s => ({ label: s, icon: null, prompt: s }));
     }
-    if (conversationStage === ConversationStage.AWAITING_WEEK) {
-      return [{ label: "12 semanas", icon: null }, { label: "20 semanas", icon: null }];
+
+    // Fallbacks baseados no estágio
+    if (conversationStage === ConversationStage.AWAITING_GESTANTE_STATUS) {
+      return [
+        { label: "Sim, estou!", icon: null, prompt: "Sim, estou gestante" }, 
+        { label: "Não estou.", icon: null, prompt: "Não estou gestante" }
+      ];
     }
     
-    // Deixe APENAS o botão de Saúde aqui:
+    // Botão padrão de suporte
     return [
       { 
         label: "Saúde", 
@@ -127,11 +136,10 @@ export const ChatInterface: React.FC = () => {
         prompt: "Quais as dicas de saúde para este momento?" 
       }
     ];
-  }, [conversationStage]);
+  }, [conversationStage, dynamicSuggestions]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
-      {/* Header */}
       <div className="bg-dd-primary p-4 text-white flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Heart size={20} fill="white" />
@@ -139,14 +147,13 @@ export const ChatInterface: React.FC = () => {
         </div>
       </div>
 
-      {/* Área de Mensagens */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
               msg.role === 'user' 
                 ? 'bg-dd-primary text-white rounded-tr-none' 
-                : 'bg-white text-slate-700 border border-gray-100 rounded-tl-none'
+                : 'bg-white text-slate-700 border border-gray-100 rounded-tl-none shadow-md'
             }`}>
               <div dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.text) }} />
             </div>
@@ -162,31 +169,32 @@ export const ChatInterface: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input e Sugestões */}
       <div className="p-4 border-t bg-white">
+        {/* Renderização dos Botões Dinâmicos */}
         <div className="flex gap-2 mb-3 overflow-x-auto pb-2 no-scrollbar">
           {suggestions.map((s, i) => (
             <button 
               key={i} 
               onClick={() => handleSendMessage(s.prompt || s.label)} 
-              className="px-4 py-2 bg-dd-primary/5 text-dd-primary rounded-full text-xs font-bold whitespace-nowrap border border-dd-primary/10 hover:bg-dd-primary/10 transition-colors"
+              className="px-4 py-2 bg-dd-primary/5 text-dd-primary rounded-full text-xs font-bold whitespace-nowrap border border-dd-primary/10 hover:bg-dd-primary/20 transition-all active:scale-95 shadow-sm"
             >
               <span className="flex items-center gap-1">{s.icon} {s.label}</span>
             </button>
           ))}
         </div>
+
         <div className="flex gap-2">
           <input 
             value={inputValue} 
             onChange={(e) => setInputValue(e.target.value)} 
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputValue)} 
-            placeholder="Escreva aqui..." 
-            className="flex-1 bg-slate-100 border-none rounded-xl px-4 text-sm focus:ring-2 focus:ring-dd-primary outline-none" 
+            placeholder="Fale com a Mãe Débora..." 
+            className="flex-1 bg-slate-100 border-none rounded-xl px-4 text-sm focus:ring-2 focus:ring-dd-primary outline-none transition-all" 
           />
           <button 
             onClick={() => handleSendMessage(inputValue)} 
             disabled={!inputValue.trim() || isLoading} 
-            className="p-2 bg-dd-primary text-white rounded-xl disabled:opacity-30 hover:bg-dd-primary/90 transition-colors"
+            className="p-2 bg-dd-primary text-white rounded-xl disabled:opacity-30 hover:bg-dd-primary/90 transition-colors shadow-md"
           >
             <Send size={20} />
           </button>

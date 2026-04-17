@@ -3,11 +3,17 @@ import { SYSTEM_INSTRUCTION } from "../constants";
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
+// Definimos um tipo para o retorno organizado
+interface GeminiResponse {
+  texto: string;
+  sugestoes: string[];
+}
+
 export const sendMessageToGemini = async (
   history: any[], 
   userMessage: string, 
   contextoSemana?: string
-): Promise<string> => {
+): Promise<GeminiResponse> => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
@@ -22,17 +28,17 @@ export const sendMessageToGemini = async (
       }))
       .filter((m, index) => !(index === 0 && m.role === 'model'));
 
-    // --- LÓGICA DE INTELIGÊNCIA DE FLUXO ---
     const ehPrimeiraMensagem = cleanHistory.length === 0;
+
+    // Comando para forçar a IA a gerar as sugestões no final
+    const formatoSugestoes = `\n\n[IMPORTANTE]: Ao final da resposta, adicione uma linha EXATAMENTE assim: "SUGESTOES: sugestao1, sugestao2, sugestao3". Crie 3 sugestões curtas (máximo 4 palavras) baseadas no contexto atual.`;
 
     let comandoFinal = "";
 
     if (ehPrimeiraMensagem) {
-      // Se for a primeira vez que ela fala a semana, manda o "Pacote Completo"
-      comandoFinal = `[REGRAS E MANUAL]: ${instrucaoCompleta}\n\n[PERGUNTA DA MAMÃE]: ${userMessage}\n\nPor favor, forneça a resposta completa, incluindo a oração da semana mencionada no manual, os 5 pilares e o link de cadastro.`;
+      comandoFinal = `[REGRAS E MANUAL]: ${instrucaoCompleta}${formatoSugestoes}\n\n[PERGUNTA DA MAMÃE]: ${userMessage}\n\nForneça a resposta completa do manual.`;
     } else {
-      // Se já houver conversa, ela entra no "Modo Acolhimento Curto"
-      comandoFinal = `[REGRAS E MANUAL]: ${instrucaoCompleta}\n\n[MENSAGEM DA MAMÃE]: ${userMessage}\n\n[INSTRUÇÃO]: Agora estamos em uma conversa contínua. NÃO repita os 5 pilares, NÃO repita o link de cadastro e NÃO repita a oração completa se já foi dita. Seja breve, acolhedora e foque no sentimento atual dela.`;
+      comandoFinal = `[REGRAS E MANUAL]: ${instrucaoCompleta}${formatoSugestoes}\n\n[MENSAGEM DA MAMÃE]: ${userMessage}\n\n[INSTRUÇÃO]: Modo conversa curta. Não repita o manual. Foque no acolhimento e sentimentos.`;
     }
 
     const contents = [
@@ -51,11 +57,30 @@ export const sendMessageToGemini = async (
       }
     });
 
-    const response = await result.response;
-    return response.text();
+    const fullResponse = result.response.text();
+
+    // --- LÓGICA DE SEPARAÇÃO ---
+    // Procuramos a palavra-chave SUGESTOES: para dividir o texto
+    const parts = fullResponse.split(/SUGESTOES:/i);
+    const textoLimpo = parts[0].trim();
+    const sugestoesRaw = parts[1] ? parts[1].split(",") : [];
+    
+    // Limpamos espaços e pontos finais das sugestões
+    const sugestoesFormatadas = sugestoesRaw
+      .map(s => s.trim().replace(/\.$/, ""))
+      .filter(s => s.length > 0)
+      .slice(0, 3); // Garantimos apenas 3
+
+    return {
+      texto: textoLimpo,
+      sugestoes: sugestoesFormatadas
+    };
 
   } catch (error: any) {
     console.error("Erro Gemini 3 Preview:", error);
-    return "Minha querida, tive um probleminha na conexão. Pode repetir a pergunta? 🙏";
+    return {
+      texto: "Minha querida, tive um probleminha na conexão. Pode repetir a pergunta? 🙏",
+      sugestoes: ["Tentar novamente", "Oração da semana", "Falar com suporte"]
+    };
   }
 };
