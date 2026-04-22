@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SYSTEM_INSTRUCTION } from "../constants";
+import { supabase } from "./supabaseService"; // Importação necessária para os logs
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
@@ -12,7 +13,8 @@ interface GeminiResponse {
 export const sendMessageToGemini = async (
   history: any[], 
   userMessage: string, 
-  contextoSemana?: string
+  contextoSemana?: string,
+  semanaAtual?: number // Adicionado parâmetro para o log
 ): Promise<GeminiResponse> => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
@@ -60,16 +62,29 @@ export const sendMessageToGemini = async (
     const fullResponse = result.response.text();
 
     // --- LÓGICA DE SEPARAÇÃO ---
-    // Procuramos a palavra-chave SUGESTOES: para dividir o texto
     const parts = fullResponse.split(/SUGESTOES:/i);
     const textoLimpo = parts[0].trim();
     const sugestoesRaw = parts[1] ? parts[1].split(",") : [];
     
-    // Limpamos espaços e pontos finais das sugestões
     const sugestoesFormatadas = sugestoesRaw
       .map(s => s.trim().replace(/\.$/, ""))
       .filter(s => s.length > 0)
-      .slice(0, 3); // Garantimos apenas 3
+      .slice(0, 3);
+
+    // --- SALVAR NO SUPABASE (LOGS) ---
+    // Usamos um bloco try independente para não travar a resposta caso o DB falhe
+    try {
+      await supabase.from('interacoes_chat').insert([
+        { 
+          semana_gestacao: semanaAtual, 
+          pergunta_usuario: userMessage, 
+          resposta_ia: textoLimpo,
+          contexto_pdf: contextoSemana
+        }
+      ]);
+    } catch (dbError) {
+      console.error("Erro ao salvar log no Supabase:", dbError);
+    }
 
     return {
       texto: textoLimpo,

@@ -20,7 +20,7 @@ export const ChatInterface: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationStage, setConversationStage] = useState<ConversationStage>(ConversationStage.INITIAL_WELCOME);
   const [gestationWeek, setGestationWeek] = useState<number | null>(null);
-  const [dynamicSuggestions, setDynamicSuggestions] = useState<string[]>([]); // NOVO ESTADO
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,14 +46,13 @@ export const ChatInterface: React.FC = () => {
     setMessages(prev => [...prev, userMsg]);
     setInputValue('');
     setIsLoading(true);
-    setDynamicSuggestions([]); // Limpa botões ao enviar
+    setDynamicSuggestions([]);
 
     try {
       let responseData: { texto: string; sugestoes: string[] };
       let nextStage = conversationStage;
       let contexto = "";
 
-      // 1. Lógica de Estágios
       if (conversationStage === ConversationStage.AWAITING_GESTANTE_STATUS) {
         if (text.toLowerCase().includes('não')) {
           responseData = { 
@@ -76,7 +75,8 @@ export const ChatInterface: React.FC = () => {
         if (!isNaN(week)) {
           setGestationWeek(week);
           contexto = await buscarContextoNoPDF(`Semana ${week}`).catch(() => "");
-          responseData = await sendMessageToGemini([...messages, userMsg], text, contexto);
+          // ATUALIZADO: Passando o parâmetro da semana para o log
+          responseData = await sendMessageToGemini([...messages, userMsg], text, contexto, week);
           nextStage = ConversationStage.GENERAL_CHAT;
         } else {
           responseData = { 
@@ -88,7 +88,8 @@ export const ChatInterface: React.FC = () => {
       else {
         const buscaTermo = gestationWeek ? `Semana ${gestationWeek}: ${text}` : text;
         contexto = await buscarContextoNoPDF(buscaTermo).catch(() => "");
-        responseData = await sendMessageToGemini([...messages, userMsg], text, contexto);
+        // ATUALIZADO: Passando a semana salva no estado para o log
+        responseData = await sendMessageToGemini([...messages, userMsg], text, contexto, gestationWeek || undefined);
       }
 
       setMessages(prev => [...prev, { 
@@ -98,7 +99,7 @@ export const ChatInterface: React.FC = () => {
         timestamp: new Date() 
       }]);
       
-      setDynamicSuggestions(responseData.sugestoes); // Define os novos botões
+      setDynamicSuggestions(responseData.sugestoes);
       setConversationStage(nextStage);
 
     } catch (e: any) {
@@ -115,12 +116,10 @@ export const ChatInterface: React.FC = () => {
   };
 
   const suggestions = useMemo(() => {
-    // Se a IA gerou sugestões, use-as
     if (dynamicSuggestions.length > 0) {
       return dynamicSuggestions.map(s => ({ label: s, icon: null, prompt: s }));
     }
 
-    // Fallbacks baseados no estágio
     if (conversationStage === ConversationStage.AWAITING_GESTANTE_STATUS) {
       return [
         { label: "Sim, estou!", icon: null, prompt: "Sim, estou gestante" }, 
@@ -128,7 +127,6 @@ export const ChatInterface: React.FC = () => {
       ];
     }
     
-    // Botão padrão de suporte
     return [
       { 
         label: "Saúde", 
@@ -170,7 +168,6 @@ export const ChatInterface: React.FC = () => {
       </div>
 
       <div className="p-4 border-t bg-white">
-        {/* Renderização dos Botões Dinâmicos */}
         <div className="flex gap-2 mb-3 overflow-x-auto pb-2 no-scrollbar">
           {suggestions.map((s, i) => (
             <button 
