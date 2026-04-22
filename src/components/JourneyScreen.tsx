@@ -45,7 +45,6 @@ export const JourneyScreen: React.FC<{ onChangeView?: (view: AppView) => void }>
                 {item.title}
               </h3>
               
-              {/* VERSÍCULO EM DESTAQUE NO CARD */}
               <div className="flex items-start gap-2 p-2 bg-white/40 rounded-xl border border-white/20">
                 <BookOpen size={14} className="text-dd-primary shrink-0 mt-0.5" />
                 <span className="text-xs md:text-[13px] text-dd-dark/70 font-medium leading-snug italic">
@@ -71,14 +70,16 @@ export const JourneyScreen: React.FC<{ onChangeView?: (view: AppView) => void }>
               <X size={28}/>
             </button>
             
-            <div className="h-40 md:h-52 bg-gradient-to-r from-orange-400 to-orange-600 flex items-center justify-center shrink-0 px-12 text-center">
+            {/* CABEÇALHO DO MODAL - CORRIGIDO PARA MÁXIMA LEITURA */}
+            <div className="h-44 md:h-56 bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center shrink-0 px-12 text-center border-b border-orange-200">
               <div className="flex flex-col items-center">
-                <span className="text-white/80 uppercase tracking-widest text-sm font-bold mb-2">
+                <span className="text-orange-600/60 uppercase tracking-[0.3em] text-xs font-black mb-3">
                    {typeof selectedWeek.week === 'number' ? `Semana ${selectedWeek.week}` : selectedWeek.week}
                 </span>
-                <h3 className="font-script text-5xl md:text-7xl text-white drop-shadow-xl">
+                <h3 className="font-script text-5xl md:text-7xl text-orange-950 leading-tight">
                   {selectedWeek.title}
                 </h3>
+                <div className="h-1 w-12 bg-orange-400/30 rounded-full mt-4"></div>
               </div>
             </div>
 
@@ -93,7 +94,7 @@ export const JourneyScreen: React.FC<{ onChangeView?: (view: AppView) => void }>
               <div className="mt-8 pt-6 border-t flex flex-col md:flex-row items-center justify-center gap-6 shrink-0">
                 <button 
                   onClick={() => setSelectedWeek(null)} 
-                  className="w-full md:w-64 bg-orange-500 text-white py-4 rounded-2xl font-bold text-xl shadow-lg hover:bg-orange-600 transition-all"
+                  className="w-full md:w-64 bg-orange-500 text-white py-4 rounded-2xl font-bold text-xl shadow-lg hover:bg-orange-600 transition-all active:scale-95"
                 >
                   Amém, eu recebo!
                 </button>
@@ -102,7 +103,7 @@ export const JourneyScreen: React.FC<{ onChangeView?: (view: AppView) => void }>
                     setSelectedWeek(null); 
                     if (onChangeView) onChangeView(AppView.CHAT); 
                   }} 
-                  className="text-orange-600 font-bold flex items-center gap-2 hover:underline text-lg"
+                  className="text-orange-600 font-bold flex items-center gap-2 hover:underline text-lg transition-all"
                 >
                   <MessageCircle size={24} /> Perguntar para a Mãe Débora
                 </button>
