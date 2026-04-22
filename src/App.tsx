@@ -6,6 +6,9 @@ import { JourneyScreen } from './components/JourneyScreen';
 import { InfoScreen } from './components/InfoScreen'; 
 import { AppView } from './types';
 
+// 1. IMPORTAR O ANALYTICS
+import { Analytics } from '@vercel/analytics/react';
+
 // Ajuste para buscar assets que estão fora da pasta src
 import appleIcon from '../assets/apple-touch-icon.png';
 import favicon from '../assets/favicon.ico';
@@ -48,6 +51,9 @@ const App: React.FC = () => {
       <main className={`w-full ${currentView === AppView.WELCOME ? 'max-w-none' : 'max-w-md md:max-w-4xl mx-auto py-6 px-4'}`}>
         {renderContent()}
       </main>
+
+      {/* 2. INCLUIR O COMPONENTE AQUI */}
+      <Analytics />
     </div>
   );
 };
